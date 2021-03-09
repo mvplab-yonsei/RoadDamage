@@ -47,18 +47,19 @@ dataset
         ...
 ```
 ## Train
+1. Download COCO pre-trained models.
+   
+   [[YOLO5s.pt]](https://drive.google.com/file/d/1EEHqpblsEVD9JaTYeaj4YW1hqjDCCmRn/view?usp=sharing)
+   
+   [[YOLO5x.pt]](https://drive.google.com/file/d/1LQP-h1VByut_5qzYk-_HJT25x3axse1s/view?usp=sharing)
+
+2. Run train.py
 
 ```bash
     python train.py --data total.yaml --cfg yolov5s.yaml --weights ./yolov5s.pt --batch-size 32
 ```
 
 ## Pre-trained Models
-
-0. Download COCO pre-trained models.
-   
-   [[YOLO5s.pt]](https://drive.google.com/file/d/1EEHqpblsEVD9JaTYeaj4YW1hqjDCCmRn/view?usp=sharing)
-   
-   [[YOLO5x.pt]](https://drive.google.com/file/d/1LQP-h1VByut_5qzYk-_HJT25x3axse1s/view?usp=sharing)
    
 1. Download our pre-trained models.
 
