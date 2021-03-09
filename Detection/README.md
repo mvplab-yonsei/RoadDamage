@@ -23,7 +23,12 @@
 
    다운로드 링크는 기재 예정입니다.
 
-2. Convert json to txt file. Make 'database' directory and place data as follows.
+2. Make 'database' directory. Convert json to txt file and place data as follows.
+
+```bash
+  python convert_yolo.py --annotation_path [your json file path] --image_path [your image file path] --train_list [your train list path] --test_list [your test list path]
+```
+
 ```bash
 dataset
 
@@ -31,20 +36,20 @@ dataset
 
 	├── train
   
-		├── [file_name.jpg]
-    ├── [file_name.txt]
+	├── [file_name.jpg]
+        ├── [file_name.txt]
         ...
     
 	├── valid
   
-		├── [file_name.jpg]
-    ├── [file_name.txt]
+	├── [file_name.jpg]
+        ├── [file_name.txt]
         ...
 ```
 ## Train
 
 ```bash
-    python train.py ~~~~~~~
+    python train.py --data total.yaml --cfg yolov5s.yaml --weights ./yolov5s.pt --batch-size 32
 ```
 
 ## Pre-trained Models
@@ -53,14 +58,14 @@ dataset
 
    기재 예정입니다.
 
-2. Place pre-trained models in '/runs/train' directory.
+2. Place pre-trained models in '/runs/train/exp/weight' directory.
 
 ## Evaluation
 
 Run Evaluation.py to evaluate the performance of trained models with following commands.
 
 ```bash
-    python train.py ~~~~~~~
+    python test.py --data total.yaml --weights ./runs/train/exp/weights/best.pt
 ```
 
 
