@@ -1,0 +1,6 @@
+train: /database/split/train/
+val: /database/split/valid/
+
+nc: 10
+
+names: ['Animals(Dolls)', 'Person', 'Garbage bag & sacks', 'Construction signs & Parking prohibited board', 'Traffic cone', 'Box', 'Stones on road', 'Pothole on road', 'Filled pothole', 'Manhole']
