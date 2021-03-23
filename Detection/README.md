@@ -76,6 +76,6 @@ Run Evaluation.py to evaluate the performance of trained models with following c
 ```
 
 ## Result
-![Test Image 1](https://github.com/mvplab-yonsei/RoadDamage/tree/main/Detection/runs/test/exp/1.png)
+<img src="https://github.com/mvplab-yonsei/RoadDamage/tree/main/Detection/runs/test/exp/1.png" width="100" />
 
 
