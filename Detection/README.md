@@ -75,7 +75,7 @@ Run Evaluation.py to evaluate the performance of trained models with following c
     python test.py --data total.yaml --weights ./runs/train/exp/weights/best.pt
 ```
 
-## Result
+## Results
 <p align="left">
   <img width="460" src="./runs/test/exp/1.png">
   <img width="460" src="./runs/test/exp/2.png">
