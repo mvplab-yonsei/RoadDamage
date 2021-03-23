@@ -75,5 +75,7 @@ Run Evaluation.py to evaluate the performance of trained models with following c
     python test.py --data total.yaml --weights ./runs/train/exp/weights/best.pt
 ```
 
+## Result
+![Test Image 1](https://github.com/mvplab-yonsei/RoadDamage/tree/main/Detection/runs/test/exp/1.png)
 
 
