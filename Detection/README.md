@@ -77,3 +77,5 @@ Run Evaluation.py to evaluate the performance of trained models with following c
 
 ## Result
 <img align="left" width="400" src="./runs/test/exp/1.png"> <img align="left" width="400" src="./runs/test/exp/2.png">
+<img align="left" width="400" src="./runs/test/exp/3.png"> <img align="left" width="400" src="./runs/test/exp/4.png">
+<img align="left" width="400" src="./runs/test/exp/5.png"> <img align="left" width="400" src="./runs/test/exp/6.png">
