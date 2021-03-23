@@ -63,7 +63,7 @@ dataset
    
 1. Download our pre-trained models.
 
-   기재 예정입니다.
+   [[best.pt]](https://drive.google.com/file/d/1H-QBmr_0NUQ3FkIDZ87WTZtyZjK1ECIJ/view?usp=sharing)
 
 2. Place pre-trained models in '/runs/train/exp/weight' directory.
 
@@ -76,6 +76,13 @@ Run Evaluation.py to evaluate the performance of trained models with following c
 ```
 
 ## Results
+
+Run detect.py to save output images of trained models with following commands.
+
+```bash
+    python detect.py --weights ./runs/train/exp/weights/best.pt --source [image directory]
+```
+
 <p align="left">
   <img width="450" src="./runs/test/exp/1.png">
   <img width="450" src="./runs/test/exp/2.png">
