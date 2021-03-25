@@ -19,6 +19,12 @@ import yaml
 from utils.google_utils import gsutil_getsize
 from utils.metrics import fitness
 from utils.torch_utils import init_torch_seeds
+import psutil
+import platform
+from datetime import datetime
+import utils.cpuinfo as cpuinfo
+from pynvml import *
+import xml.etree.ElementTree as ET
 
 # Settings
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -503,3 +509,61 @@ def increment_path(path, exist_ok=True, sep=''):
         i = [int(m.groups()[0]) for m in matches if m]  # indices
         n = max(i) + 1 if i else 2  # increment number
         return f"{path}{sep}{n}"  # update path
+
+def write_imglist(dir, logger):
+    images = sorted([os.path.basename(d) for d in glob.glob(os.path.join(dir, '*.jpg'))])
+    logger.info(images)
+    logger.info('Number of images in {}: {:d}'.format(dir.split('/')[-1], len(images)))
+
+def get_size(bytes, suffix="B"):
+    """
+    Scale bytes to its proper format
+    e.g:
+        1253656 => '1.20MB'
+        1253656678 => '1.17GB'
+    """
+    factor = 1024
+    for unit in ["", "K", "M", "G", "T", "P"]:
+        if bytes < factor:
+            return f"{bytes:.2f}{unit}{suffix}"
+        bytes /= factor
+
+def write_info(logger):
+    uname = platform.uname()
+    logger.info("======================================Boot Time======================================")
+    logger.info(f"Boot Time: {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}")
+    logger.info("==================================System Information==================================")
+    logger.info(f"System: {uname.system}\nNode Name: {uname.node}\nRelease: {uname.release}\nVersion: {uname.version}\nMachine: {uname.machine}\nProcessor: {uname.processor}")
+    svmem = psutil.virtual_memory()
+    nvmlInit()
+    handle = nvmlDeviceGetHandleByIndex(0)
+    logger.info(f"CPU: {cpuinfo.cpu.info[0]['model name']}\nMemory total: {get_size(svmem.total)}\nGPU: {nvmlDeviceGetName(handle)}")
+
+def Logger_System(xml_dir, log_dir, output, paths, names):
+    for i in range(len(paths)):
+        xml_file = os.path.join(xml_dir, paths[i].split('/')[-1].replace('jpg', 'xml'))
+        log_file = os.path.join(log_dir, paths[i].split('/')[-1].replace('jpg', 'txt'))
+
+        pred_cls = output[i][:, 5].unique()
+        if len(pred_cls) > 0:
+            f = open(log_file, 'a+')
+            if not os.path.isfile(log_file):
+                if os.path.isfile(xml_file):
+                    ann_tree = ET.parse(xml_file)
+                    ann_root = ann_tree.getroot()
+                    env = ann_root.find('environment').find('Gps_sensor')
+                    f.write("[GPS information]:\n")
+                    f.write(env.findtext('Altitude') + '\n')
+                    f.write(env.findtext('Longitude') + '\n')
+                    f.write(env.findtext('Status') + '\n')
+
+            f.write("\n[Detected classes]:\n")
+            for cls in range(len(pred_cls)):
+                f.write(names[int(pred_cls[cls])] + '\n')
+            f.close()
+
+
+
+
+
+
