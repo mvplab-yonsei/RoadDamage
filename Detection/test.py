@@ -36,7 +36,7 @@ def test(data,
          save_conf=False,  # save auto-label confidences
          plots=False,
          log_imgs=0,  # number of logged images
-         compute_loss=None):
+         compute_loss=None, logger=False):
 
     # Initialize/load model and set device
     logger = setup_logger('Test', './')
@@ -201,7 +201,8 @@ def test(data,
             Thread(target=plot_images, args=(img, output_to_target(output), paths, f, names), daemon=True).start()
 
         # save GPS log
-        Logger_System('/data1/database/data_0310/xmls', './Logger', output, paths, names)
+        if not training and logger:
+            Logger_System('./database/xmls', './Logger', output, paths, names)
 
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
@@ -274,6 +275,7 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='runs/test', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
+    parser.add_argument('--logger_system', action='store_true', help='save GPS info with detected classes')
     opt = parser.parse_args()
     opt.save_json |= opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file
@@ -304,7 +306,7 @@ if __name__ == '__main__':
             for i in x:  # img-size
                 print('\nRunning %s point %s...' % (f, i))
                 r, _, t = test(opt.data, weights, opt.batch_size, i, opt.conf_thres, opt.iou_thres, opt.save_json,
-                               plots=False)
+                               plots=False, logger=opt.logger_system)
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
         os.system('zip -r study.zip study_*.txt')

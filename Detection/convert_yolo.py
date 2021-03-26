@@ -33,10 +33,10 @@ with open(opt.annotation_path, "r") as json_file:
 
     for i in range(num_of_bbox):
         if len(bbox_info[i]['bbox']) != 0:
-            label_file = open("./label/" + img_name_list[bbox_info[i]['image_id'] - 1].replace(".png.png", ".png.txt"), 'a')
+            label_file = open("./database/labels/" + img_name_list[bbox_info[i]['image_id'] - 1].replace(".png.png", ".txt"), 'a')
             img = cv2.imread(os.path.join(opt.image_path,  img_name_list[bbox_info[i]['image_id'] - 1]), 1)
 
-            cv2.imwrite("./image/" + img_name_list[bbox_info[i]['image_id'] - 1], img)
+            cv2.imwrite("./database/images/" + img_name_list[bbox_info[i]['image_id'] - 1].replace(".png.png", ".jpg"), img)
 
             x = bbox_info[i]['bbox'][0]
             y = bbox_info[i]['bbox'][1]
@@ -72,8 +72,8 @@ while True:
 
     print(image_name)
 
-    shutil.copyfile(os.path.join("./images/", image_name), os.path.join("./split/train/", image_name))
-    shutil.copyfile(os.path.join("./labels/", label_name), os.path.join("./split/train/", label_name))
+    shutil.copyfile(os.path.join("./database/images/", image_name), os.path.join("./split/train/", image_name))
+    shutil.copyfile(os.path.join("./database/labels/", label_name), os.path.join("./split/train/", label_name))
 
 f.close()
 
@@ -89,7 +89,7 @@ while True:
 
     print(image_name)
 
-    shutil.copyfile(os.path.join("./images/", image_name), os.path.join("./split/valid/", image_name))
-    shutil.copyfile(os.path.join("./labels/", label_name), os.path.join("./split/valid/", label_name))
+    shutil.copyfile(os.path.join("./database/images/", image_name), os.path.join("./split/valid/", image_name))
+    shutil.copyfile(os.path.join("./database/labels/", label_name), os.path.join("./split/valid/", label_name))
 
 f.close()
