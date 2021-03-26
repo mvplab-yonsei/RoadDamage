@@ -40,7 +40,6 @@
 ## Pre-trained Models
 
 1. Download our pre-trained models.
-
 [[pre-trained model]](https://drive.google.com/file/d/1i9BT-iJZeHgU5l0IArqG6Jn3zYsiFp-Q/view?usp=sharing)
    
 2. Place pretrained models in './trained_model' directory.
