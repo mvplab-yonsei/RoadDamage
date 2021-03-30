@@ -19,11 +19,14 @@
 
 ## Datasets
 
-1. Download databases
+1. Download databases. Place them into 'database/images' directory.
 
    다운로드 링크는 기재 예정입니다.
 
 2. Make 'database' directory. Convert json to txt file and place data as follows.
+   
+   Train/ Test list 는 업로드 예정입니다.
+   
 
 ```bash
   python convert_yolo.py --annotation_path [your json file path] --image_path [your image file path] --train_list [your train list path] --test_list [your test list path]
@@ -71,6 +74,7 @@ dataset
 
 Run Evaluation.py to evaluate the performance of trained models with following commands.
 
+
 ```bash
     python test.py --data total.yaml --weights ./runs/train/exp/weights/best.pt
 ```
@@ -79,8 +83,10 @@ Run Evaluation.py to evaluate the performance of trained models with following c
 
 Run detect.py to save output images of trained models with following commands.
 
+The Logger will be saved in 'Logger' directory with --logger_system command.
+
 ```bash
-    python detect.py --weights ./runs/train/exp/weights/best.pt --source [image directory]
+    python detect.py --weights ./runs/train/exp/weights/best.pt --source [image directory] --logger_system
 ```
 
 <p align="left">

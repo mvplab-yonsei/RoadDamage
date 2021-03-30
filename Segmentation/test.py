@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torchvision as tv
 import segmentation_models_pytorch as smp
+import os
 from utils.logger import setup_logger
 import logging
 from datetime import datetime
@@ -11,6 +12,7 @@ import platform
 import utils.cpuinfo as cpuinfo
 from pynvml import *
 import xml.etree.ElementTree as ET
+import argparse
 
 
 def get_size(bytes, suffix="B"):
@@ -40,11 +42,11 @@ def write_info(logger):
 
 
 def Logger_System(xml_dir, log_dir, output, paths, threshold):
+
     xml_file = os.path.join(xml_dir, paths.split('/')[-1].replace('jpg', 'xml'))
     log_file = os.path.join(log_dir, paths.split('/')[-1].replace('jpg', 'txt'))
-    print(xml_file)
-    if output > threshold:
 
+    if output > threshold:
         f = open(log_file, 'a+')
         if os.path.isfile(log_file):
             if os.path.isfile(xml_file):
@@ -62,18 +64,18 @@ def Logger_System(xml_dir, log_dir, output, paths, threshold):
 
 
 class Tester(object):
-    def __init__(self, epoch):
+    def __init__(self, use_logger, epoch):
         # _, self.val_loader = make_data_loader()
         self.val_loader = make_data_loader()
         self.model = smp.PAN(encoder_name='resnet34', encoder_weights='imagenet', in_channels=3, classes=2).cuda()
         self.model = nn.DataParallel(self.model)
-        self.model.load_state_dict(torch.load('/data1/submit_code/Test_code_segmentation/trained_model/{}_34.tar'.format(epoch), map_location='cuda:0'))
+        self.model.load_state_dict(torch.load('./trained_model/{}_34.tar'.format(epoch)))
         self.model.eval()
         self.xml_dir = '/data1/database/data_0310/xmls'
         self.log_dir = '/data1/submit_code/Logger'
         self.paths = '/data1/submit_code/Test_code_segmentation/testset/images/'
         self.threshold = 2048
-        self.use_logger = True
+        self.use_logger = use_logger
         os.mkdir('./output')
         os.mkdir('./output/img')
         os.mkdir('./output/pred')
@@ -125,14 +127,13 @@ class Tester(object):
             logger.info('[{}] {} [Pixel accuracy:{:5f}, mIou:{:5f}]'.format(str(i+1), name[0], pixel_acc, miou))
 
             # save results
-            tv.utils.save_image((image * 0.2) + 0.5, './output/img/{}'.format(name[0]))
-            tv.utils.save_image(FG_pred, './output/pred/{}'.format(name[0]))
-            tv.utils.save_image(mask.float(), './output/mask/{}'.format(name[0]))
+            tv.utils.save_image((image * 0.2) + 0.5, './output/img/{}.png'.format(i))
+            tv.utils.save_image(FG_pred, './output/pred/{}.png'.format(i))
+            tv.utils.save_image(mask.float(), './output/mask/{}.png'.format(i))
 
         # testing
         total_acc /= (i + 1)
         total_miou /= (i + 1)
-
         logger.info('[Final] [Pixel accuracy:{:5f}, mIoU:{:5f}]\n'.format(total_acc, total_miou))
 
 
@@ -141,7 +142,12 @@ def main():
 
     logger = setup_logger("Test", './', 0)
     write_info(logger)
-    trainer = Tester(epoch=40)
+
+    parser = argparse.ArgumentParser(description="Road Segmentation Test")
+    parser.add_argument("--use_logger_system", action='store_true')
+
+    args = parser.parse_args()
+    trainer = Tester(args.use_logger_system, epoch=40)
     trainer.testing()
 
 
