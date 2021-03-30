@@ -7,7 +7,7 @@ NIA 인공지능 학습용 데이터 구축사업의 '67/68: 도로장애물/표
 
 ## Licence
 
-기재 예정입니다.
+GPL-3.0 license
 
 ## Installation
 
