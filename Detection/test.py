@@ -11,7 +11,7 @@ from tqdm import tqdm
 from models.experimental import attempt_load
 from utils.datasets import create_dataloader
 from utils.general import coco80_to_coco91_class, check_dataset, check_file, check_img_size, check_requirements, \
-    box_iou, non_max_suppression, scale_coords, xyxy2xywh, xywh2xyxy, set_logging, increment_path, colorstr, write_info, Logger_System
+    box_iou, non_max_suppression, scale_coords, xyxy2xywh, xywh2xyxy, set_logging, increment_path, colorstr, write_imglist, write_info, Logger_System
 from utils.metrics import ap_per_class, ConfusionMatrix
 from utils.plots import plot_images, output_to_target, plot_study_txt
 from utils.torch_utils import select_device, time_synchronized
@@ -36,11 +36,11 @@ def test(data,
          save_conf=False,  # save auto-label confidences
          plots=False,
          log_imgs=0,  # number of logged images
-         compute_loss=None, logger=False):
+         compute_loss=None):
 
     # Initialize/load model and set device
     logger = setup_logger('Test', './')
-    write_info(logger)
+    write_info(logger, True)
 
     training = model is not None
     if training:  # called by train.py
@@ -52,7 +52,7 @@ def test(data,
 
         # Directories
         save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
-        (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+        # (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
         # Load model
         model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -87,14 +87,14 @@ def test(data,
         dataloader = create_dataloader(path, imgsz, batch_size, model.stride.max(), opt, pad=0.5, rect=True,
                                        prefix=colorstr('test: ' if opt.task == 'test' else 'val: '))[0]
 
+    # write_imglist(path, logger)
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)
     names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
-    s = ('%20s' + '%12s' * 7) % ('Class', 'Images', 'Targets', 'P', 'R', 'mAP@.5', 'mAP@.5:.95', 'F1')
     p, r, f1, mp, mr, map50, map, t0, t1 = 0., 0., 0., 0., 0., 0., 0., 0., 0.
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class, wandb_images = [], [], [], [], []
-    for batch_i, (img, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
+    for batch_i, (img, targets, paths, shapes) in enumerate(dataloader):
         stats_perimg = []
         img = img.to(device, non_blocking=True)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -137,25 +137,6 @@ def test(data,
             predn = pred.clone()
             scale_coords(img[si].shape[1:], predn[:, :4], shapes[si][0], shapes[si][1])  # native-space pred
 
-            # Append to text file
-            if save_txt:
-                gn = torch.tensor(shapes[si][0])[[1, 0, 1, 0]]  # normalization gain whwh
-                for *xyxy, conf, cls in predn.tolist():
-                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                    line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-                    with open(save_dir / 'labels' / (path.stem + '.txt'), 'a') as f:
-                        f.write(('%g ' * len(line)).rstrip() % line + '\n')
-
-            # W&B logging
-            if plots and len(wandb_images) < log_imgs:
-                box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
-                             "class_id": int(cls),
-                             "box_caption": "%s %.3f" % (names[cls], conf),
-                             "scores": {"class_score": conf},
-                             "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
-                boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
-                wandb_images.append(wandb.Image(img[si], boxes=boxes, caption=path.name))
-
             # Assign all predictions as incorrect
             correct = torch.zeros(pred.shape[0], niou, dtype=torch.bool, device=device)
             if nl:
@@ -193,16 +174,27 @@ def test(data,
             stats.append((correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), tcls))
             stats_perimg.append((correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), tcls))
 
-        # Plot images
-        if plots and batch_i < 3:
-            f = save_dir / f'test_batch{batch_i}_labels.jpg'  # labels
-            Thread(target=plot_images, args=(img, targets, paths, f, names), daemon=True).start()
-            f = save_dir / f'test_batch{batch_i}_pred.jpg'  # predictions
-            Thread(target=plot_images, args=(img, output_to_target(output), paths, f, names), daemon=True).start()
+        # # f1 per image
+        # mf1_perimg = 0
+        # mp_perimg = 0
+        # mr_perimg = 0
+        # stats_perimg = [np.concatenate(x, 0) for x in zip(*stats_perimg)]
+        # if len(stats_perimg) and stats_perimg[0].any():
+        #     p_perimg, r_perimg, _, f1_perimg, ap_class_perimg = ap_per_class(*stats_perimg, plot=plots, save_dir=save_dir, names=names)
+        #     p_perimg, r_perimg,  f1_perimg =  p_perimg[:, 0], r_perimg[:, 0], f1_perimg[:, 0]  # [P, R, AP@0.5, AP@0.5:0.95]
+        #     nt_perimg = np.bincount(stats_perimg[3].astype(np.int64), minlength=nc)  # number of targets per class
+        #     for ind, c in enumerate(ap_class_perimg):
+        #         mf1_perimg += f1_perimg[ind] * nt_perimg[c]
+        #         mp_perimg += p_perimg[ind] * nt_perimg[c]
+        #         mr_perimg += r_perimg[ind] * nt_perimg[c]
+        #     mf1_perimg = mf1_perimg/nt_perimg.sum()
+        #     mp_perimg = mp_perimg / nt_perimg.sum()
+        #     mr_perimg = mr_perimg / nt_perimg.sum()
+        #
+        # logger.info('[{}] {} [F1 score:{:4f} (Prec: {:4f}, Rec: {:4f})]'.format(str(batch_i + 1), paths[0].split('/')[-1], mf1_perimg, mp_perimg, mr_perimg))
 
         # save GPS log
-        if not training and logger:
-            Logger_System('./database/xmls', './Logger', output, paths, names)
+        # Logger_System('./xmls', './Logger', output, paths, names)
 
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
@@ -214,52 +206,43 @@ def test(data,
     else:
         nt = torch.zeros(1)
 
-    # Print results
-    pf = '%20s' + '%12.3g' * 7  # print format
-
-    mf1 = 0
-    map = 0
+    meanf1 = 0
+    meanp = 0
+    meanr = 0
+    meanap = 0
     # Print results per class
-    names = ['Animals', 'Person', 'Garbage', 'Construction', 'Traffic cone', 'Box', 'Stones', 'Pothole', 'Filled pothole', 'Manhole']
-    if not training:
-        with open(os.path.join(save_dir, 'Results.txt'), mode='a+') as f:
-            f.write(s + '\n')
-            if (verbose or (nc <= 20)) and nc > 1 and len(stats):
-                for i, c in enumerate(ap_class):
-                    print(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i], f1[i]))
-                    f.write(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i], f1[i]) + '\n')
-                    mf1 += f1[i] * nt[c]
-                    map += ap50[i] * nt[c]
-            mf1 = mf1 / nt.sum()
-            map = map / nt.sum()
-            print("mean F1 score: " + str(mf1))
-            f.write("mean F1 score: " + str(mf1) + '\n')
-            f.close()
+    if (verbose or (nc <= 20)) and nc > 1 and len(stats):
+        for i, c in enumerate(ap_class):
+            meanf1 += f1[i] * nt[c]
+            meanp += p[i] * nt[c]
+            meanr += r[i] * nt[c]
+            meanap += ap50[i] * nt[c]
+    meanf1 = meanf1 / nt.sum()
+    meanp = meanp / nt.sum()
+    meanr = meanr / nt.sum()
+    meanap = meanap / nt.sum()
+    logger.info('[Final] F1 score:{:4f} (Prec: {:4f}, Rec: {:4f})\n'.format(meanf1, meanp, meanr))
 
     # Print speeds
     t = tuple(x / seen * 1E3 for x in (t0, t1, t0 + t1)) + (imgsz, imgsz, batch_size)  # tuple
     if not training:
         print('Speed: %.1f/%.1f/%.1f ms inference/NMS/total per %gx%g image at batch-size %g' % t)
 
-    # Plots
-    if plots:
-        confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        if wandb and wandb.run:
-            wandb.log({"Images": wandb_images})
-            wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('test*.jpg'))]})
-
+    # Return results
     model.float()  # for training
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
-    return (mf1, mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t
+
+    write_info(logger, False)
+    return (meanf1, mp, mr, map50, meanap, *(loss.cpu() / len(dataloader)).tolist()), maps, t
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='test.py')
-    parser.add_argument('--weights', nargs='+', type=str, default='/home/mvpserversixteen/minhyeok/yolov5/runs/train/exp/weights/best.pt', help='model.pt path(s)')
+    parser.add_argument('--weights', nargs='+', type=str, default='./runs/train/exp/weights/best.pt', help='model.pt path(s)')
     parser.add_argument('--data', type=str, default='total.yaml', help='*.data path')
-    parser.add_argument('--batch-size', type=int, default=32, help='size of each image batch')
+    parser.add_argument('--batch-size', type=int, default=1, help='size of each image batch')
     parser.add_argument('--img-size', type=int, default=608, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
@@ -275,11 +258,10 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='runs/test', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
-    parser.add_argument('--logger_system', action='store_true', help='save GPS info with detected classes')
     opt = parser.parse_args()
     opt.save_json |= opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file
-    print(opt)
+    # print(opt)
     check_requirements()
 
     if opt.task in ['val', 'test']:  # run normally
@@ -306,7 +288,7 @@ if __name__ == '__main__':
             for i in x:  # img-size
                 print('\nRunning %s point %s...' % (f, i))
                 r, _, t = test(opt.data, weights, opt.batch_size, i, opt.conf_thres, opt.iou_thres, opt.save_json,
-                               plots=False, logger=opt.logger_system)
+                               plots=False)
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
         os.system('zip -r study.zip study_*.txt')

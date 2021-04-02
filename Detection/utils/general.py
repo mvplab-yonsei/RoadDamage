@@ -528,16 +528,22 @@ def get_size(bytes, suffix="B"):
             return f"{bytes:.2f}{unit}{suffix}"
         bytes /= factor
 
-def write_info(logger):
+def write_info(logger, is_started):
     uname = platform.uname()
-    logger.info("======================================Boot Time======================================")
-    logger.info(f"Boot Time: {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}")
-    logger.info("==================================System Information==================================")
-    logger.info(f"System: {uname.system}\nNode Name: {uname.node}\nRelease: {uname.release}\nVersion: {uname.version}\nMachine: {uname.machine}\nProcessor: {uname.processor}")
-    svmem = psutil.virtual_memory()
-    nvmlInit()
-    handle = nvmlDeviceGetHandleByIndex(0)
-    logger.info(f"CPU: {cpuinfo.cpu.info[0]['model name']}\nMemory total: {get_size(svmem.total)}\nGPU: {nvmlDeviceGetName(handle)}")
+    if is_started:
+        logger.info(f"Test Command: 'python test.py'")
+        logger.info("======================================Boot Time======================================")
+        logger.info(f"Boot Time: {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}")
+        logger.info("==================================System Information==================================")
+        logger.info(f"System: {uname.system}\nNode Name: {uname.node}\nRelease: {uname.release}\nVersion: {uname.version}\nMachine: {uname.machine}\nProcessor: {uname.processor}")
+        svmem = psutil.virtual_memory()
+        nvmlInit()
+        handle = nvmlDeviceGetHandleByIndex(0)
+        logger.info(f"CPU: {cpuinfo.cpu.info[0]['model name']}\nMemory total: {get_size(svmem.total)}\nGPU: {nvmlDeviceGetName(handle)}")
+        logger.info(f"Pytorch Version: {torch.__version__}")
+    else:
+        logger.info("======================================Boot Time======================================")
+        logger.info(f"Boot Time: {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}")
 
 def Logger_System(xml_dir, log_dir, output, paths, names):
     for i in range(len(paths)):
