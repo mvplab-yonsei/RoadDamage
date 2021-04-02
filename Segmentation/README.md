@@ -30,12 +30,20 @@
     python preprocess.py 
 ```
    
-## Train (validation included)
-1. Run train.py
+## Train
+Run train.py
 
 ```
     python train.py 
 ```
+
+## Evaluate
+Run test.py
+
+```
+    python test.py 
+```
+
 
 ## Pre-trained Models
 
